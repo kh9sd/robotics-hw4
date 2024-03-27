@@ -42,7 +42,23 @@ class MobileUNet(nn.Module):
         ##########################
         # define other layers here
         ##########################
-        raise NotImplementedError
+
+        self.layer_40_4_4 = nn.Sequential(
+            nn.Conv2d(40, 4, kernel_size=1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=8, mode="bilinear")
+        )
+
+        self.layer_24_8_8 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode="bilinear"),
+            nn.Conv2d(24, 4, kernel_size=1)
+        )
+
+        self.merged_layer = nn.Sequential(
+            nn.Conv2d(4, 2, kernel_size=1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2, mode="bilinear")
+        )
 
 
     def forward(self, img: Tensor) -> Tensor:
@@ -64,7 +80,10 @@ class MobileUNet(nn.Module):
         ############################################
         # implement additional steps in forward pass
         ############################################
-        raise NotImplementedError
+        x_40_4_4_path = self.layer_40_4_4(x_narrow)
+        x_24_8_8_path = self.layer_24_8_8(x_wide)
+
+        return self.merged_layer(x_40_4_4_path + x_24_8_8_path)
 
 
     @torch.no_grad()
