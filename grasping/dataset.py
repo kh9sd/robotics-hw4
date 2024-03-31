@@ -1,11 +1,27 @@
-from typing import Tuple
+from typing import Tuple, List
 import numpy as np
 from numpy.typing import NDArray
 from torch import Tensor
 import torchvision.transforms.functional as TF
 import torchvision.transforms as T
 from torch.utils.data import Dataset
+import random
 
+
+# rotate_idx can be 0 = 90, 1 = 180, 2 ..., 3...
+# rotates CCW
+def rotate_around_origin_90s(pos: np.array, rotate_idx: int) -> np.array:
+    assert pos.shape == (2,)
+    if rotate_idx == 0:
+        return np.array([pos[0], pos[1]])
+    elif rotate_idx == 1:
+        return np.array([pos[1], -pos[0]])
+    elif rotate_idx == 2:
+        return np.array([-pos[0], -pos[1]])
+    elif rotate_idx == 3:
+        return np.array([-pos[1], pos[0]])
+    else:
+        assert False
 
 class GraspDataset(Dataset):
     def __init__(self, train: bool=True) -> None:
@@ -61,6 +77,30 @@ class GraspDataset(Dataset):
          - Rot 180 deg : rot_action = (63,  0, 0)
          - Rot 270 deg : rot_action = (63, 63, 1)
         '''
+        assert img.shape == (3,64,64)
+
+        random_rot_selection = random.choice([0,1,2,3])
+        # TF.rotate rotates counter clockwise, in degrees
+        rotated_img = TF.rotate(img, 90 * random_rot_selection)
+        assert rotated_img.shape == (3,64,64)
+
+        cur_pos = action[0:2]
+        cur_pos = np.array([cur_pos[1], cur_pos[0]]) # swap to get into x y form
+        cur_pos -= 32 # get to centered at origin
+        rotated_pos = rotate_around_origin_90s(cur_pos, random_rot_selection)
+        rotated_pos = np.array([rotated_pos[1], rotated_pos[0]]) # unswap
+        rotated_pos += 32
+        assert rotated_pos.shape == (2,)
+
+        rotated_action = np.array([sorted((0, rotated_pos[0], 63))[1], # clip it screw it
+                                   sorted((0, rotated_pos[1], 63))[1], 
+                                   (action[2] + random_rot_selection) % 2])
+
+        # print(rotated_action)
+        assert(rotated_action[0] < 64)
+        assert(rotated_action[1] < 64)
+        assert(rotated_action[2] < 2)
+        return rotated_img, rotated_action
         ################################
         # Implement this function for Q4
         ################################
