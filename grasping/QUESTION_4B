@@ -1,0 +1,1 @@
+If the model predicts a grab that works, but doesn't match the one in the validation dataset, this could lead to a large source of error. For example a long irregularly shaped object could have multiple grasps of varying orientations that doesn't match the given one in the dataset, so it would be a false negative.
