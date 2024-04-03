@@ -1,0 +1,1 @@
+For applying translations, we could apply a translation to the image by shifting it with some random x and y offset, and filling in the new spaces with blank pixel data. This same x y offset shift would have to be applied to the gripper location as well. The gripper rotation would be unchanged however since translations don't affect rotations.
